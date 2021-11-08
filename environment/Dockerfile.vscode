@@ -1,0 +1,27 @@
+FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu-20.04
+
+# install necessary packages for building pintos
+RUN \
+  apt-get update && \
+  apt-get -y install \
+    build-essential \
+    git \
+    time \
+    gdb \
+    qemu-utils \
+    qemu-system-x86 \
+    && \
+  rm -rf /var/lib/apt/lists/*
+
+# install editors
+RUN \
+  apt-get update && \
+  apt-get -y install \
+    vim \
+    emacs \
+    nano \
+    && \
+  rm -rf /var/lib/apt/lists/*
+
+ENV PINTOSPATH=/workspaces/pintos/src
+ENV PATH="${PINTOSPATH}/utils:${PATH}"

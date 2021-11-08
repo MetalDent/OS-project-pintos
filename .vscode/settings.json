@@ -1,0 +1,7 @@
+{
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "editor.wrappingIndent": "deepIndent",
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 80
+}

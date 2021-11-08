@@ -1,0 +1,98 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Assignment 1 build",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/threads",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Assignment 1 clean",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/threads clean",
+      "group": "build"
+    },
+    {
+      "label": "Assignment 1 check",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/threads/build check",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "dependsOn": [
+        "Assignment 1 build"
+      ],
+    },
+
+    {
+      "label": "Assignment 2 build",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/userprog",
+      "group": "build"
+    },
+    {
+      "label": "Assignment 2 clean",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/userprog clean",
+      "group": "build"
+    },
+    {
+      "label": "Assignment 2 check",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/userprog/build check",
+      "group": "test",
+      "dependsOn": [
+        "Assignment 2 build"
+      ],
+    },
+
+    {
+      "label": "Assignment 3 build",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/vm",
+      "group": "build"
+    },
+    {
+      "label": "Assignment 3 clean",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/vm clean",
+      "group": "build"
+    },
+    {
+      "label": "Assignment 3 check",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/vm/build check",
+      "group": "test",
+      "dependsOn": [
+        "Assignment 3 build"
+      ],
+    },
+
+    {
+      "label": "Assignment 4 build",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/filesys",
+      "group": "build"
+    },
+    {
+      "label": "Assignment 4 clean",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/filesys clean",
+      "group": "build"
+    },
+    {
+      "label": "Assignment 4 check",
+      "type": "shell",
+      "command": "make -C ${workspaceFolder}/src/filesys/build check",
+      "group": "test",
+      "dependsOn": [
+        "Assignment 4 build"
+      ],
+    }
+  ]
+}

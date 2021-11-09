@@ -90,41 +90,49 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >> B1: How does your solution guarantee that consumers will hold until
 >> there is something to consume in the buffer?
 
->>>> In our solution, there is a check on the number of items in the buffer, and if that number is zero, there is a wait for the 'full' condition:
+>>>> In our solution, there is a check on the number of items in the buffer, 
+>>>> and if that number is zero, there is a wait for the 'full' condition:
 
 	while(buf_count == 0)
             cond_wait(&full,&lock);
 
-Therefore, a consumer will only proceed to consume if there is an item in the buffer, since the full condition only gets signalled when the producer produces an item.
-
+Therefore, a consumer will only proceed to consume if there is an item in the buffer, 
+>>>> since the full condition only gets signalled when the producer produces an item.
 
 >> B2: How does your solution guarantee that producers will hold until
 >> there is some free space in the buffer?
 
->>>> As in the answer above, there is a similar check in the producer thread, to check if the buffer is full:
+>>>> As in the answer above, there is a similar check in the producer thread, 
+>>>> to check if the buffer is full:
 	
 	while(buf_count == MAX)
             cond_wait(&empty, &lock);
 
-The empty condition only gets signalled when a consumer consumes an item, and hence the buffer is emptied by atleast 1 item. 
+The empty condition only gets signalled when a consumer consumes an item, and hence the buffer is 
+>>>> emptied by atleast 1 item. 
 
 >> B3: How does your solution preserve a FIFO semantics i.e., the first
 >> character produced will be the first to be consumed?
 
->>>> This is managed by using seperate indices for the producer and consumer positions ('producer_pos' and 'consumer_pos') in the buffer. They are only incremented in the critical section and hence only one thread accesses them.
-So, FIFA semantics are maintained.
+>>>> This is managed by using seperate indices for the producer and consumer positions 
+>>>> ('producer_pos' and 'consumer_pos') in the buffer. They are only incremented in the critical section 
+>>>> and hence only one thread accesses them. So, FIFA semantics are maintained.
+
 ---- RATIONALE ----
 
 >> B4: Give an intuition for why your program preserves safety.
 
->>>> To preserve safety, the producer consumer code must ensure mutual exclusion when any changes to the buffer are made.
-In our solution, all the changes to the buffer and other variables are all done when the lock is acquired by the thread. So, there is no possibility of two threads performing any operation in the critical section, since only one thread can have the lock.
-Hence, the program definitely preserves safety.
+>>>> To preserve safety, the producer consumer code must ensure mutual exclusion when any changes
+>>>> to the buffer are made. In our solution, all the changes to the buffer and other variables 
+>>>> are all done when the lock is acquired by the thread. So, there is no possibility of two threads 
+>>>> performing any operation in the critical section, since only one thread can have the lock.
+>>>> Hence, the program definitely preserves safety.
 
 >> B5: Why did you choose this design? Did you consider other design
 >> alternatives? In what ways is it superior to another design you considered?
 
->>>> This design uses two condition variables and a lock. An alternative was to use just one condition variable and a lock.
+>>>> This design uses two condition variables and a lock. 
+>>>> An alternative was to use just one condition variable and a lock.
 
 
 			     NARROW BRIDGE
@@ -135,14 +143,25 @@ Hence, the program definitely preserves safety.
 >> C1: How does your solution guarantee that no more than 3 vehicles
 >> are crossing the bridge in the same direction?
 
->>>> The procedure "isSafe()" checks how many vehicles are currently on the bridge 
->>>> and in which direction.
+>>>> We have created a semaphore "space" whose initial value is 3. 
+>>>> It is being decremented in the ArriveBridge() method and accordingly changed in the
+>>>> ExitBridge() method.
 
 >> C2: What prevents vehicles from opposite directions from crossing the
 >> bridge simultaneously?
 
->>>> The procedure "isSafe()" checks if there are any vehicle in the given direction 
->>>> and how many vehicles are currently on the bridge.
+>>>> In the ArriveBridge() method, the following code block maintains this condition:
+
+		if (currentDirection != direc && active > 0)
+	  	{
+	  		printf("Waiting\n");
+	    		waiting++; 											
+	    		sema_up(&mutex);
+	    		sema_down(&direction[direc]); 	// when wake up, ready to go!
+	  	} 
+
+>>>> This checks if the current direction of vehicles is different and if it is then the current direction
+>>>> vehicles go to waiting state.
 
 >> C3: How does your solution grant priority to emergency vehicles over
 >> the queue of vehicles ahead in the same direction?

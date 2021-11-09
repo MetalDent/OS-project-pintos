@@ -9,8 +9,8 @@
 #include "threads/thread.h"
 #include "devices/timer.h"
 
-#define MAX 100                                          //Max Buffer Size
-#define HELLO "Hello World"                              //Constant Hello World String
+#define MAX 100                                          // max Buffer Size
+#define HELLO "Hello World"                              // constant Hello World String
 
 int buf_count = 0;
 int print_count = 0;

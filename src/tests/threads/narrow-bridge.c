@@ -8,18 +8,17 @@
 #include "threads/synch.h"
 #include "threads/thread.h"
 
-//directions
+// directions
 #define LEFT 		0
 #define RIGHT 	1
 
-int currentDirection = LEFT;	//random default dir
-int active = 0;								// no. of active vehicles, can be >3, but actual num will never exceed 3
-int waiting = 0; 							// no. of waiting vehicles
-// int counter = 0;				
+int currentDirection = LEFT;	          // random default direction
+int active = 0;								          // no. of active vehicles, can be >3, but actual num will never exceed 3
+int waiting = 0; 							          // no. of waiting vehicles
 
-struct semaphore bridge_vehicles;				//semaphore for maintaining max 3 vehicles on the bridge
-struct semaphore mutex; 								//semaphore for locking
-struct semaphore direction[2];					//semaphore for each direction, used for maintaining direction context
+struct semaphore bridge_vehicles;				// semaphore for maintaining max 3 vehicles on the bridge
+struct semaphore mutex; 								// semaphore for locking
+struct semaphore direction[2];					// semaphore for each direction, used for maintaining direction context
 
 void narrow_bridge(unsigned int num_vehicles_left, unsigned int num_vehicles_right,
         unsigned int num_emergency_left, unsigned int num_emergency_right);
@@ -46,7 +45,7 @@ void test_narrow_bridge(void)
 	pass();
 }
 
-void BridgeInit(void)							// initialising semaphores
+void BridgeInit(void)							  // initialising semaphores
 {
   sema_init(&bridge_vehicles,3);
   sema_init(&mutex,1);
@@ -67,23 +66,23 @@ void ArriveBridge(int direc, int prio)
   
 	printf("Vehicle %d, direction: %d, priority %d Arrived!\n", vehicle_num, direc, prio);
   
-	sema_down(&mutex);			//acquiring lock
+	sema_down(&mutex);			                            // acquiring lock
   
-	if (currentDirection != direc && active > 0)				//opposite direction vehicles, got to wait
+	if (currentDirection != direc && active > 0)				// opposite direction vehicles, got to wait
   {
 		// printf("Waiting\n");
     waiting++; 											
     sema_up(&mutex);
     sema_down(&direction[direc]); 	
   } 
-  else 																								//can move, set current direction to vehicle direction
+  else 																								// can move, set current direction to vehicle direction
   {
     currentDirection = direc;
     active++;
     sema_up(&mutex);
   }
 	
-	sema_down(&bridge_vehicles); 								// this is to make sure there is space on the bridge, decrease 1 since entered
+	sema_down(&bridge_vehicles); 								        // this is to make sure there is space on the bridge, decrease 1 since entered
 }
 
 void CrossBridge(int direc, int prio)
@@ -99,10 +98,10 @@ void CrossBridge(int direc, int prio)
 void ExitBridge(int direc, int prio)
 {
   // counter--;
-  sema_up(&bridge_vehicles);					//since we exited, increase the space available on the bridge
+  sema_up(&bridge_vehicles);					// since we exited, increase the space available on the bridge
   sema_down(&mutex);
 	active--;
-  if (active == 0) 										//If the num of active vehicles in this direction is 0, switch directions
+  if (active == 0) 										// if the num of active vehicles in this direction is 0, switch directions
   {
 		while (waiting > 0) 
     {

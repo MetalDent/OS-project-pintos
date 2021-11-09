@@ -8,45 +8,47 @@
 #include "threads/synch.h"
 #include "threads/thread.h"
 
+//directions
 #define LEFT 		0
 #define RIGHT 	1
 
-int currentDirection = LEFT;
-int active = 0;
-int waiting = 0; 
-int counter = 0;
+int currentDirection = LEFT;	//random default dir
+int active = 0;								// no. of active vehicles, can be >3, but actual num will never exceed 3
+int waiting = 0; 							// no. of waiting vehicles
+// int counter = 0;				
 
-struct lock lock_res;
-struct semaphore space;
-struct semaphore mutex; 
-struct semaphore direction[2];
+struct semaphore bridge_vehicles;				//semaphore for maintaining max 3 vehicles on the bridge
+struct semaphore mutex; 								//semaphore for locking
+struct semaphore direction[2];					//semaphore for each direction, used for maintaining direction context
 
 void narrow_bridge(unsigned int num_vehicles_left, unsigned int num_vehicles_right,
         unsigned int num_emergency_left, unsigned int num_emergency_right);
 
 void test_narrow_bridge(void)
 {
-    /*narrow_bridge(0, 0, 0, 0);
-    narrow_bridge(1, 0, 0, 0);
-    narrow_bridge(0, 0, 0, 1);
-    narrow_bridge(0, 4, 0, 0);
-    narrow_bridge(0, 0, 4, 0);
-    narrow_bridge(3, 3, 3, 3);
-    narrow_bridge(4, 3, 4 ,3);
-    narrow_bridge(7, 23, 17, 1);
-    narrow_bridge(40, 30, 0, 0);
-    narrow_bridge(30, 40, 0, 0);
-    narrow_bridge(23, 23, 1, 11);
-    narrow_bridge(22, 22, 10, 10);
-    narrow_bridge(0, 0, 11, 12);
-    narrow_bridge(0, 10, 0, 10);*/
-    narrow_bridge(0, 10, 10, 0);
-    pass();
+  /*narrow_bridge(0, 0, 0, 0);
+  narrow_bridge(1, 0, 0, 0);
+  narrow_bridge(0, 0, 0, 1);
+  narrow_bridge(0, 4, 0, 0);
+  narrow_bridge(0, 0, 4, 0);
+  narrow_bridge(3, 3, 3, 3);
+	narrow_bridge(4, 3, 4 ,3);
+	narrow_bridge(7, 23, 17, 1);
+	narrow_bridge(40, 30, 0, 0);
+	narrow_bridge(30, 40, 0, 0);
+	narrow_bridge(23, 23, 1, 11);
+	narrow_bridge(22, 22, 10, 10);
+	narrow_bridge(0, 0, 11, 12);
+	narrow_bridge(0, 10, 0, 10);*/
+	// narrow_bridge(0, 10, 10, 0);
+	narrow_bridge(4, 3, 4 ,3);
+
+	pass();
 }
 
-void BridgeInit(void)							// initiating semaphores
+void BridgeInit(void)							// initialising semaphores
 {
-  sema_init(&space,3);
+  sema_init(&bridge_vehicles,3);
   sema_init(&mutex,1);
   sema_init(&direction[LEFT],0);
   sema_init(&direction[RIGHT],0);
@@ -65,43 +67,42 @@ void ArriveBridge(int direc, int prio)
   
 	printf("Vehicle %d, direction: %d, priority %d Arrived!\n", vehicle_num, direc, prio);
   
-	sema_down(&mutex);
+	sema_down(&mutex);			//acquiring lock
   
-	if (currentDirection != direc && active > 0)
+	if (currentDirection != direc && active > 0)				//opposite direction vehicles, got to wait
   {
-		printf("Waiting\n");
-    waiting++; 											// need to wait
+		// printf("Waiting\n");
+    waiting++; 											
     sema_up(&mutex);
-    sema_down(&direction[direc]); 	// when wake up, ready to go!
+    sema_down(&direction[direc]); 	
   } 
-  else 
+  else 																								//can move, set current direction to vehicle direction
   {
     currentDirection = direc;
     active++;
     sema_up(&mutex);
   }
 	
-	sema_down(&space); 								// make sure there is space on bridge
+	sema_down(&bridge_vehicles); 								// this is to make sure there is space on the bridge, decrease 1 since entered
 }
 
 void CrossBridge(int direc, int prio)
 {
-  int vehicle_num = thread_tid();
-  
-	counter++;
-  
+  // sema_down(&mutex);
+  int vehicle_num = thread_tid(); 
 	printf("Vehicle %d, direction: %d, priority %d, Entered!\n", vehicle_num, direc, prio);
-  printf("%d\n", counter);
-  
 	thread_yield();
+	printf("Vehicle %d, direction: %d, priority %d, Exited!\n", vehicle_num, direc, prio);
+	// sema_up(&mutex);
 }
 
 void ExitBridge(int direc, int prio)
 {
-  counter--;
-  sema_up(&space);
+  // counter--;
+  sema_up(&bridge_vehicles);					//since we exited, increase the space available on the bridge
   sema_down(&mutex);
-  if (active-- == 0) 
+	active--;
+  if (active == 0) 										//If the num of active vehicles in this direction is 0, switch directions
   {
 		while (waiting > 0) 
     {
@@ -114,7 +115,7 @@ void ExitBridge(int direc, int prio)
   sema_up(&mutex); 
 
   int vehicle_num = thread_tid();
-  printf("Vehicle %d, direction: %d, priority: %d Exited!\n", vehicle_num, direc, prio);
+  // printf("Vehicle %d, direction: %d, priority: %d Exited!\n", vehicle_num, direc, prio);
 }
 
 void OneVehicle(int direc)

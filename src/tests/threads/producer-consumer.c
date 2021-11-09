@@ -12,12 +12,18 @@
 #define MAX 100                                          //Max Buffer Size
 #define HELLO "Hello World"                              //Constant Hello World String
 
-int buf_count = 0, print_count = 0, hello_count = 0;
-int producer_pos = 0, consumer_pos = 0;
-char ch, buffer[MAX];
+int buf_count = 0;
+int print_count = 0;
+int hello_count = 0;
+int producer_pos = 0;
+int consumer_pos = 0;
+char ch;
+char buffer[MAX];
 char printed[MAX];
+
 struct lock lock;
-struct condition empty, full;
+struct condition empty;
+struct condition full;
 
 void producer_consumer(unsigned int num_producer, unsigned int num_consumer);
 
@@ -41,16 +47,22 @@ void producer(void *aux)
     while(hello_count < sizeof(HELLO) - 1)
     {
         lock_acquire(&lock);
-        if(hello_count == sizeof(HELLO) - 1){
+        
+        if(hello_count == sizeof(HELLO) - 1)
+        {
             lock_release(&lock);
             return;
         }
+      
         while(buf_count == MAX)
             cond_wait(&empty, &lock);
+        
         ch = HELLO[hello_count++];
         buffer[producer_pos++ % MAX] = ch;     
         buf_count++;
+        
         printf("Producer %d has put char %c in the buffer, now it is: %s \n", thread_tid(), ch, buffer);
+        
         cond_signal(&full, &lock); 
         lock_release(&lock);
     }
@@ -60,18 +72,24 @@ void consumer(void *aux)
 {
     while(print_count < sizeof(HELLO) - 1)
     {
-        if(print_count == sizeof(HELLO) - 1){
+        if(print_count == sizeof(HELLO) - 1)
+        {
             lock_release(&lock);
             return;
         }
+        
         lock_acquire(&lock);
+        
         while(buf_count == 0)
             cond_wait(&full,&lock);
+        
         ch = buffer[consumer_pos++ % MAX];
         buffer[consumer_pos-1] = ' ';
         printed[print_count++ % MAX] = ch;
         buf_count--;
+        
         printf("Consumer %d has taken char %c from the buffer, now it is: %s, printed string: %s \n", thread_tid(), ch, buffer, printed);
+        
         cond_signal(&empty,&lock);
         lock_release(&lock);
     }
@@ -86,15 +104,10 @@ void producer_consumer(UNUSED unsigned int num_producer, UNUSED unsigned int num
     // printf("Size of string: %d \n", sizeof(HELLO));
 
     for(int i=1;i<=num_producer;i++)
-    {
         thread_create("producer", PRI_MIN, producer, (void *)i);
-    }
+    
     for(int j=1;j<=num_consumer;j++)
-    {
         thread_create("consumer", PRI_MIN, consumer, (void *)j);
-    }
 
     // printf("Final Variables: buffercount: %d, printcount: %d, hellocount: %d", buf_count, print_count, hello_count);
 }
-
-

@@ -49,34 +49,37 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
->>>> Earlier, timer_sleep() was calling thread_yield() which was constanting putting threads between READY queue and RUN queue, and ultimately occupying CPU.
-Now, the current thread is first disabled. Then it is made to sleep (blocked) for given number of ticks. 
-The thread is then inserted into a list (sleep_list) which is done by comparing the number of ticks, so that we can prioritize the thread with an earlier wake-up time.
+>>>> Earlier, timer_sleep() was calling thread_yield() which was 
+>>>> constanting putting threads between READY queue and RUN queue, and ultimately occupying CPU.
+>>>> Now, the current thread is first disabled. Then it is made to sleep (blocked) for 
+>>>> given number of ticks. The thread is then inserted into a list (sleep_list) which is done by 
+>>>> comparing the number of ticks, so that we can prioritize the thread with an earlier wake-up time.
 
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
 
->>>> 
+>>>> \o/
 
 ---- SYNCHRONIZATION ----
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
->>>> The priorities of each thread is compared (cmp_cond_priority and cmp_priority) and then added to the thread queue accordingly. 
-The code in sema_up() in the synch.c is also changed a bit to make the queue, a priority queue. 
+>>>> The priorities of each thread is compared (cmp_cond_priority and cmp_priority) and 
+>>>> then added to the thread queue accordingly. The code in sema_up() in the synch.c is 
+>>>> also changed a bit to make the queue, a priority queue. 
 
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
 
->>>> 
+>>>> \o/
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
 
->>>>
+>>>> \o/
 
 
     		     PROD/CONS
@@ -106,27 +109,43 @@ The code in sema_up() in the synch.c is also changed a bit to make the queue, a 
 
 ---- SYNCHRONIZATION ----
 
->> C1: How does your solution guarantee that no more that 3 vehicles
+>> C1: How does your solution guarantee that no more than 3 vehicles
 >> are crossing the bridge in the same direction?
+
+>>>> The procedure "isSafe()" checks how many vehicles are currently on the bridge 
+>>>> and in which direction.
 
 >> C2: What prevents vehicles from opposite directions from crossing the
 >> bridge simultaneously?
 
+>>>> The procedure "isSafe()" checks if there are any vehicle in the given direction 
+>>>> and how many vehicles are currently on the bridge.
+
 >> C3: How does your solution grant priority to emergency vehicles over
 >> the queue of vehicles ahead in the same direction?
+
+>>>> It checks if there are any emergency vehicles for a given direction then while creating 
+>>>> the thread the priority of thread is set as "1" as follows:
+>>>> thread_create("left emergency", 1, OneVehicle, (void *)LEFT);
 
 >> C4: How do you guarantee that despite having priority, emergency vehicles
 >> do not start crossing the bridge while there are still vehicles crossing
 >> it in the oposite direction?
 
+>>>> \o/
+
 >> C5: Explain with examples why your solution does not preserve neither
 >> fairness nor freedom from starvation, other than what has been indicated
 >> for emergency vehicles.
+
+>>>> \o/
 
 ---- RATIONALE ----
 
 >> C6: Why did you choose this design? Did you consider other design
 >> alternatives? In what ways is it superior to another design you considered?
+
+>>>> \o/
 
 
 			   SURVEY QUESTIONS
@@ -141,14 +160,26 @@ the semester.
 >> In your opinion, was this assignment, or any one of the three problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
 
+>>>> The "Narrow-Bridge" problem was a little tricky than it seemed at first.
+
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
+
+>>>> While doing the "Alarm Clock" task, we got deeper insights in the 
+>>>> scheduling and "Narrow-Bridge" taught many things like the proper
+>>>> usage of semaphores and priority scheduling.
 
 >> Is there some particular fact or hint we should give students in
 >> future semesters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
 
+>>>> \o/
+
 >> Do you have any suggestions for the TAs to more effectively assist
 >> students, either for future semesters or the remaining projects?
 
+>>>> \o/
+
 >> Any other comments?
+
+>>>> \o/

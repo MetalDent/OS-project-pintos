@@ -32,8 +32,7 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-/* modified or new data structures */
->> thread.h: In struct thread
+thread.h: In struct thread:
 	struct list_elem donorelem;	// priority donor threads, 
 					// they donate their priority to the current thread if it has a higher priority
 	
@@ -47,7 +46,7 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 	
 	struct lock *blocked;		// blocked thread
 
->> thread.c:
+thread.c:
 	extern struct list sleep_list;    // list for sleeping threads
 
 ---- ALGORITHMS ----
@@ -55,13 +54,13 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
->>>> Earlier, timer_sleep() was calling thread_yield() which was 
->>>> constanting putting threads between READY queue and RUN queue, and ultimately occupying CPU.
->>>> Now, the current thread is first disabled. Then it is made to sleep (blocked) for 
->>>> given number of ticks. The thread is then inserted into a list (sleep_list) which is done by 
->>>> comparing the number of ticks, so that we can prioritize the thread with an earlier wake-up time.
+Earlier, timer_sleep() was calling thread_yield() which was 
+constanting putting threads between READY queue and RUN queue, and ultimately occupying CPU.
+Now, the current thread is first disabled. Then it is made to sleep (blocked) for 
+given number of ticks. The thread is then inserted into a list (sleep_list) which is done by 
+comparing the number of ticks, so that we can prioritize the thread with an earlier wake-up time.
 
->>>>	cur_level = intr_disable();
+	cur_level = intr_disable();
 	cur_thread = thread_current();
 
 	cur_thread->ticks_wakeup = timer_ticks() + ticks;
@@ -70,32 +69,32 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
 
->>>> We have added the main handling on the thread side of code, so the handling
->>>> is transfered from the timer interrupt to reduce time spent there.
->>>> The ticks compare method and sleeping thread list are both on the thread side.
+We have added the main handling on the thread side of code, so the handling
+is transfered from the timer interrupt to reduce time spent there.
+The ticks compare method and sleeping thread list are both on the thread side.
 
 ---- SYNCHRONIZATION ----
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
->>>> The priorities of each thread is compared (cmp_cond_priority and cmp_priority) and 
->>>> then added to the thread queue accordingly. The code in sema_up() in the synch.c is 
->>>> also changed a bit to make the queue, a priority queue. 
+The priorities of each thread is compared (cmp_cond_priority and cmp_priority) and 
+then added to the thread queue accordingly. The code in sema_up() in the synch.c is 
+also changed a bit to make the queue, a priority queue. 
 
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
 
->>>> The interrupt is disabled before going into the "critical section" so as to avoid such 
->>>> problem. Later we enable it again.
+The interrupt is disabled before going into the "critical section" so as to avoid such 
+problem. Later we enable it again.
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
 
->>>> We had initially considered adding a scheduling method in the timer.c file
->>>> but it had cluttered the code and also was not optimised. 
+We had initially considered adding a scheduling method in the timer.c file
+but it had cluttered the code and also was not optimised. 
 
 
     		     PROD/CONS
@@ -106,51 +105,51 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >> B1: How does your solution guarantee that consumers will hold until
 >> there is something to consume in the buffer?
 
->>>> In our solution, there is a check on the number of items in the buffer, 
->>>> and if that number is zero, there is a wait for the 'full' condition:
+In our solution, there is a check on the number of items in the buffer, 
+and if that number is zero, there is a wait for the 'full' condition:
 
->>>>	while(buf_count == 0)
+	while(buf_count == 0)
             cond_wait(&full,&lock);
 
 Therefore, a consumer will only proceed to consume if there is an item in the buffer, 
->>>> since the full condition only gets signalled when the producer produces an item.
+since the full condition only gets signalled when the producer produces an item.
 
 >> B2: How does your solution guarantee that producers will hold until
 >> there is some free space in the buffer?
 
->>>> As in the answer above, there is a similar check in the producer thread, 
->>>> to check if the buffer is full:
+As in the answer above, there is a similar check in the producer thread, 
+to check if the buffer is full:
 	
->>>>	while(buf_count == MAX)
+	while(buf_count == MAX)
             cond_wait(&empty, &lock);
 
 The empty condition only gets signalled when a consumer consumes an item, and hence the buffer is 
->>>> emptied by atleast 1 item. 
+emptied by atleast 1 item. 
 
 >> B3: How does your solution preserve a FIFO semantics i.e., the first
 >> character produced will be the first to be consumed?
 
->>>> This is managed by using seperate indices for the producer and consumer positions 
->>>> ('producer_pos' and 'consumer_pos') in the buffer. They are only incremented in the critical section 
->>>> and hence only one thread accesses them. So, FIFA semantics are maintained.
+This is managed by using seperate indices for the producer and consumer positions 
+('producer_pos' and 'consumer_pos') in the buffer. They are only incremented in the critical section 
+and hence only one thread accesses them. So, FIFA semantics are maintained.
 
 ---- RATIONALE ----
 
 >> B4: Give an intuition for why your program preserves safety.
 
->>>> To preserve safety, the producer consumer code must ensure mutual exclusion when any changes
->>>> to the buffer are made. In our solution, all the changes to the buffer and other variables 
->>>> are all done when the lock is acquired by the thread. So, there is no possibility of two threads 
->>>> performing any operation in the critical section, since only one thread can have the lock.
->>>> Hence, the program definitely preserves safety.
+To preserve safety, the producer consumer code must ensure mutual exclusion when any changes
+to the buffer are made. In our solution, all the changes to the buffer and other variables 
+are all done when the lock is acquired by the thread. So, there is no possibility of two threads 
+performing any operation in the critical section, since only one thread can have the lock.
+Hence, the program definitely preserves safety.
 
 >> B5: Why did you choose this design? Did you consider other design
 >> alternatives? In what ways is it superior to another design you considered?
 
->>>> This design uses two condition variables and a lock. 
->>>> An alternative was to use just one condition variable and a lock.
->>>> But that design had a possibility of deadlock.
->>>> This solution is elegant and some what symmetric, and hence we chose this.
+This design uses two condition variables and a lock. 
+An alternative was to use just one condition variable and a lock.
+But that design had a possibility of deadlock.
+This solution is elegant and some what symmetric, and hence we chose this.
 
 
 			     NARROW BRIDGE
@@ -161,15 +160,15 @@ The empty condition only gets signalled when a consumer consumes an item, and he
 >> C1: How does your solution guarantee that no more than 3 vehicles
 >> are crossing the bridge in the same direction?
 
->>>> We have created a semaphore "space" whose initial value is 3. 
->>>> It is being decremented in the ArriveBridge() method and accordingly changed in the
->>>> ExitBridge() method. The variables can be more than 3 but because of this semaphore,
->>>> the number of vehicles on the bridge will never exceed 3.
+We have created a semaphore "space" whose initial value is 3. 
+It is being decremented in the ArriveBridge() method and accordingly changed in the
+ExitBridge() method. The variables can be more than 3 but because of this semaphore,
+the number of vehicles on the bridge will never exceed 3.
 
 >> C2: What prevents vehicles from opposite directions from crossing the
 >> bridge simultaneously?
 
->>>> In the ArriveBridge() method, the following code block maintains this condition:
+In the ArriveBridge() method, the following code block maintains this condition:
 
 		if (currentDirection != direc && active > 0)
 	  	{
@@ -179,42 +178,42 @@ The empty condition only gets signalled when a consumer consumes an item, and he
 	    		sema_down(&direction[direc]);
 	  	} 
 
->>>> This checks if the current direction of vehicles is different and if it is then the
->>>> vehicles on the other side go to waiting state.
+This checks if the current direction of vehicles is different and if it is then the
+vehicles on the other side go to waiting state.
 
 >> C3: How does your solution grant priority to emergency vehicles over
 >> the queue of vehicles ahead in the same direction?
 
->>>> It checks if there are any emergency vehicles for a given direction then while creating 
->>>> the thread the priority of thread is set as "1" as follows:
->>>> thread_create("left emergency", 1, OneVehicle, (void *)LEFT);
->>>> Since these threads will be given priority over normal vehicles in thread creating and scheduling.
+It checks if there are any emergency vehicles for a given direction then while creating 
+the thread the priority of thread is set as "1" as follows:
+thread_create("left emergency", 1, OneVehicle, (void *)LEFT);
+Since these threads will be given priority over normal vehicles in thread creating and scheduling.
 
 >> C4: How do you guarantee that despite having priority, emergency vehicles
 >> do not start crossing the bridge while there are still vehicles crossing
 >> it in the oposite direction?
 
->>>> Since the priority is only given while thread creating and scheduling, and not inside the
->>>> thread function itself, this scenario would not occur. Each vehicle, including emergency ones,
->>>> are passed to the same function, OneVehicle, the checks of direction and crossing stand for
->>>> each type of vehicle. The Semaphores used ensure this. There is no priority involved 'inside'
->>>> the functions.
+Since the priority is only given while thread creating and scheduling, and not inside the
+thread function itself, this scenario would not occur. Each vehicle, including emergency ones,
+are passed to the same function, OneVehicle, the checks of direction and crossing stand for
+each type of vehicle. The Semaphores used ensure this. There is no priority involved 'inside'
+the functions.
 
 >> C5: Explain with examples why your solution does not preserve neither
 >> fairness nor freedom from starvation, other than what has been indicated
 >> for emergency vehicles.
 
->>>> Since the ordering of the semaphores is handled properly, starvation doesn't occur. This order
->>>> of semaphores was done after reading the producer consumer and reader writer problems. The emergency
->>>> vehicles, as stated in the above answer, are only given priority while creating and scheduling threads,
->>>> so the constraints of the problem, i.e., the direction and number of vehicles remain satisfied.
+Since the ordering of the semaphores is handled properly, starvation doesn't occur. This order
+of semaphores was done after reading the producer consumer and reader writer problems. The emergency
+vehicles, as stated in the above answer, are only given priority while creating and scheduling threads,
+so the constraints of the problem, i.e., the direction and number of vehicles remain satisfied.
 
 ---- RATIONALE ----
 
 >> C6: Why did you choose this design? Did you consider other design
 >> alternatives? In what ways is it superior to another design you considered?
 
->>>> This was the solution that clicked first and it worked. So we stuck with this design.
+This was the solution that clicked first and it worked. So we stuck with this design.
 
 
 			   SURVEY QUESTIONS
@@ -229,26 +228,23 @@ the semester.
 >> In your opinion, was this assignment, or any one of the three problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
 
->>>> The "Narrow-Bridge" problem was a little tricky than it seemed at first.
+The "Narrow-Bridge" problem was a little tricky than it seemed at first.
 
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
 
->>>> While doing the "Alarm Clock" task, we got deeper insights in the 
->>>> scheduling and "Narrow-Bridge" taught many things like the proper
->>>> usage of semaphores and priority scheduling.
+While doing the "Alarm Clock" task, we got deeper insights in the 
+scheduling and "Narrow-Bridge" taught many things like the proper
+usage of semaphores and priority scheduling.
 
 >> Is there some particular fact or hint we should give students in
 >> future semesters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
-
->>>> -
+-
 
 >> Do you have any suggestions for the TAs to more effectively assist
 >> students, either for future semesters or the remaining projects?
-
->>>> -
+-
 
 >> Any other comments?
-
->>>> -
+-

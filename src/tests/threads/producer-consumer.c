@@ -44,70 +44,70 @@ void test_producer_consumer(void)
 
 void producer(void *aux)
 {
-    while(hello_count < sizeof(HELLO) - 1)
+  while(hello_count < sizeof(HELLO) - 1)
+  {
+    lock_acquire(&lock);
+        
+    if(hello_count == sizeof(HELLO) - 1)
     {
-        lock_acquire(&lock);
-        
-        if(hello_count == sizeof(HELLO) - 1)
-        {
-            lock_release(&lock);
-            return;
-        }
-      
-        while(buf_count == MAX)
-            cond_wait(&empty, &lock);
-        
-        ch = HELLO[hello_count++];
-        buffer[producer_pos++ % MAX] = ch;     
-        buf_count++;
-        
-        printf("Producer %d has put char %c in the buffer, now it is: %s \n", thread_tid(), ch, buffer);
-        
-        cond_signal(&full, &lock); 
-        lock_release(&lock);
+      lock_release(&lock);
+      return;
     }
+    
+    while(buf_count == MAX)
+      cond_wait(&empty, &lock);
+        
+    ch = HELLO[hello_count++];
+    buffer[producer_pos++ % MAX] = ch;     
+    buf_count++;
+        
+    printf("Producer %d has put char %c in the buffer, now it is: %s \n", thread_tid(), ch, buffer);
+        
+    cond_signal(&full, &lock); 
+    lock_release(&lock);
+  }
 }
 
 void consumer(void *aux)
 {
-    while(print_count < sizeof(HELLO) - 1)
+  while(print_count < sizeof(HELLO) - 1)
+  {
+    if(print_count == sizeof(HELLO) - 1)
     {
-        if(print_count == sizeof(HELLO) - 1)
-        {
-            lock_release(&lock);
-            return;
-        }
-        
-        lock_acquire(&lock);
-        
-        while(buf_count == 0)
-            cond_wait(&full,&lock);
-        
-        ch = buffer[consumer_pos++ % MAX];
-        buffer[consumer_pos-1] = ' ';
-        printed[print_count++ % MAX] = ch;
-        buf_count--;
-        
-        printf("Consumer %d has taken char %c from the buffer, now it is: %s, printed string: %s \n", thread_tid(), ch, buffer, printed);
-        
-        cond_signal(&empty,&lock);
-        lock_release(&lock);
+      lock_release(&lock);
+      return;
     }
+        
+    lock_acquire(&lock);
+        
+    while(buf_count == 0)
+      cond_wait(&full,&lock);
+        
+    ch = buffer[consumer_pos++ % MAX];
+    buffer[consumer_pos-1] = ' ';
+    printed[print_count++ % MAX] = ch;
+    buf_count--;
+        
+    printf("Consumer %d has taken char %c from the buffer, now it is: %s, printed string: %s \n", thread_tid(), ch, buffer, printed);
+        
+    cond_signal(&empty,&lock);
+    lock_release(&lock);
+  }
 }
 
 void producer_consumer(UNUSED unsigned int num_producer, UNUSED unsigned int num_consumer)
 {
-    lock_init(&lock);
-    cond_init(&empty);
-    cond_init(&full);
+  lock_init(&lock);
+  cond_init(&empty);
+  cond_init(&full);
 
-    // printf("Size of string: %d \n", sizeof(HELLO));
+  // printf("Size of string: %d \n", sizeof(HELLO));
 
-    for(int i=1;i<=num_producer;i++)
-        thread_create("producer", PRI_MIN, producer, (void *)i);
+  for(int i=1;i<=num_producer;i++)
+      thread_create("producer", PRI_MIN, producer, (void *)i);
     
-    for(int j=1;j<=num_consumer;j++)
-        thread_create("consumer", PRI_MIN, consumer, (void *)j);
+  for(int j=1;j<=num_consumer;j++)
+      thread_create("consumer", PRI_MIN, consumer, (void *)j);
 
-    // printf("Final Variables: buffercount: %d, printcount: %d, hellocount: %d", buf_count, print_count, hello_count);
+  // printf("Final Variables: buffercount: %d, printcount: %d, hellocount: %d", buf_count, print_count, hello_count);
 }

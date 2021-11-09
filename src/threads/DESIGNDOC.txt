@@ -18,10 +18,10 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 
 >> CITATIONS:
 1. www.cs.umd.edu
-2. www.csl.mtu.edu
-3. http://web.stanford.edu/
+2. http://web.stanford.edu/
+3. https://www.ccs.neu.edu/home/amislove/teaching/cs5600/fall10/pintos/
 4. https://www.ccs.neu.edu/home/skotthe/classes/cs5600/fall/2015/notes/pintos-project1.pdf
-5. https://www.ccs.neu.edu/home/amislove/teaching/cs5600/fall10/pintos/
+5. www.csl.mtu.edu 
 
 			     ALARM CLOCK
 			     ===========

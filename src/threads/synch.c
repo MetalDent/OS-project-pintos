@@ -208,13 +208,10 @@ lock_acquire (struct lock *lock)
   if(lock->holder)
   {
     thread_current()->locker = lock->holder;
-
-    list_push_front (&lock->holder->pot_donors,&thread_current()->donorelem);
-
+    list_push_front (&lock->holder->prio_donors,&thread_current()->donorelem);
     thread_current()->blocked = lock;
 
     struct thread *temp = thread_current();
-
 
     while(temp->locker!=NULL)
     {
@@ -256,13 +253,10 @@ lock_try_acquire (struct lock *lock)
   else  // change starts
   {
     thread_current()->locker = lock->holder;
-
-    list_push_front(&lock->holder->pot_donors,&thread_current()->donorelem);
-
+    list_push_front(&lock->holder->prio_donors,&thread_current()->donorelem);
     thread_current()->blocked = lock;
 
     struct thread *temp = thread_current();
-
 
     while(temp->locker!=NULL)
     {
@@ -271,9 +265,7 @@ lock_try_acquire (struct lock *lock)
         temp->locker->priority = temp->priority;
         temp = temp->locker;
       }
-
     }
-
   }
   /* change ends  */
   
@@ -297,13 +289,13 @@ lock_release (struct lock *lock)
   /*  change starts */
   enum intr_level old_level = intr_disable ();
   
-  if(list_empty(&thread_current()->pot_donors))
+  if(list_empty(&thread_current()->prio_donors))
     thread_set_priority(thread_current()->base_priority);
   else
   {
     struct list_elem *e;
 
-    for (e = list_begin (&thread_current()->pot_donors); e != list_end (&thread_current()->pot_donors);
+    for (e = list_begin (&thread_current()->prio_donors); e != list_end (&thread_current()->prio_donors);
          e = list_next (e))
     {
       struct thread *f = list_entry (e, struct thread, donorelem);
@@ -315,9 +307,9 @@ lock_release (struct lock *lock)
       }
     }
 
-    if(!list_empty(&thread_current()->pot_donors))
+    if(!list_empty(&thread_current()->prio_donors))
     {
-      struct list_elem *max_donor = list_max(&thread_current()->pot_donors, cmp_priority, NULL);
+      struct list_elem *max_donor = list_max(&thread_current()->prio_donors, cmp_priority, NULL);
       struct thread *max_donor_thread = list_entry(max_donor, struct thread, donorelem);
 
       if(thread_current()->base_priority > max_donor_thread->priority)

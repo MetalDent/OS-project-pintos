@@ -372,7 +372,7 @@ thread_set_priority (int new_priority)
   enum intr_level old_level;
   old_level = intr_disable ();
   
-  if(list_empty(&thread_current()->pot_donors))
+  if(list_empty(&thread_current()->prio_donors))
   {
     thread_current()->priority = new_priority; 
     thread_current()->base_priority = new_priority;
@@ -526,7 +526,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->base_priority = priority;
   t->locker = NULL;
   t->blocked = NULL;
-  list_init (&t->pot_donors);
+  list_init (&t->prio_donors);
   /* change ends  */
   
   list_push_back (&all_list, &t->allelem);

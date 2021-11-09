@@ -8,17 +8,20 @@
 
 >> Fill in the names, email addresses and matriculation numbers of your group members.
 
-FirstName LastName <email@domain.example> 9999999
-FirstName LastName <email@domain.example> 9999999
+Priya Pandya <prpa00001@uni-saarland.de> 7022812
+Parth Thakker <path00003@uni-saarland.de> 7023151
 
 ---- PRELIMINARIES ----
 
 >> If you have any preliminary comments on your submission, notes for the
 >> TAs, or extra credit, please give them here.
 
->> Please cite any offline or online sources you consulted while
->> preparing your submission, other than the Pintos documentation, course
->> text, lecture notes, and course staff.
+>> CITATIONS:
+1. www.cs.umd.edu
+2. www.csl.mtu.edu
+3. http://web.stanford.edu/
+4. https://www.ccs.neu.edu/home/skotthe/classes/cs5600/fall/2015/notes/pintos-project1.pdf
+5. https://www.ccs.neu.edu/home/amislove/teaching/cs5600/fall10/pintos/
 
 			     ALARM CLOCK
 			     ===========
@@ -29,26 +32,51 @@ FirstName LastName <email@domain.example> 9999999
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+/* modified or new data structures */
+>> thread.h: In struct thread
+	struct list_elem donorelem;	// priority donor threads
+	int64_t ticks_wakeup;   	// ticks to wakeup 
+	int base_priority;   		// the priority of the base element/thread
+	struct thread *locker;		// the locker thread who currently has acquired the resource
+	struct list prio_donors;	// threads who have acquired locks but a new thread having higher priority comes
+	struct lock *blocked;		// blocked thread
+
+>> thread.c:
+	extern struct list sleep_list;    // list for sleeping threads
+
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
+>>>> Earlier, timer_sleep() was calling thread_yield() which was constanting putting threads between READY queue and RUN queue, and ultimately occupying CPU.
+Now, the current thread is first disabled. Then it is made to sleep (blocked) for given number of ticks. 
+The thread is then inserted into a list (sleep_list) which is done by comparing the number of ticks, so that we can prioritize the thread with an earlier wake-up time.
+
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
+
+>>>> 
 
 ---- SYNCHRONIZATION ----
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+>>>> The priorities of each thread is compared (cmp_cond_priority and cmp_priority) and then added to the thread queue accordingly. 
+The code in sema_up() in the synch.c is also changed a bit to make the queue, a priority queue. 
+
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
+
+>>>> 
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+>>>>
 
 
     		     PROD/CONS

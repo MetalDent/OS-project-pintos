@@ -95,12 +95,12 @@ struct thread
     struct list_elem elem;              /* List element. */
     
     /*  change starts  */
-    struct list_elem donorelem;
-    int64_t ticks_wakeup;   // ticks to wakeup 
-    int base_priority;   
-    struct thread *locker;
-    struct list pot_donors;
-    struct lock *blocked;
+    struct list_elem donorelem;	// priority donor threads
+	  int64_t ticks_wakeup;   	// ticks to wakeup 
+	  int base_priority;   		// the priority of the base element/thread
+	  struct thread *locker;		// the locker thread who currently has acquired the resource
+	  struct list prio_donors;	// threads who have acquired locks but a new thread having higher priority comes
+	  struct lock *blocked;		// blocked thread
     /*  change ends  */
 
 #ifdef USERPROG

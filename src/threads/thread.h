@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include <kernel/list.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -92,6 +93,15 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+    
+    /*  change starts  */
+    struct list_elem donorelem;
+    int64_t ticks_wakeup;   // ticks to wakeup 
+    int base_priority;   
+    struct thread *locker;
+    struct list pot_donors;
+    struct lock *blocked;
+    /*  change ends  */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -106,6 +116,7 @@ struct thread
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+//int load_avg;
 
 void thread_init (void);
 void thread_start (void);
@@ -137,5 +148,10 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+/* change starts  */
+bool cmp_ticks_wakeup(struct list_elem *first, struct list_elem *second, void *aux);  // compares the ticks of the threads
+bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux);      // comapares the priorities of the threads
+/* change ends  */
 
 #endif /* threads/thread.h */

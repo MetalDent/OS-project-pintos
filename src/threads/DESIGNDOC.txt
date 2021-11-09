@@ -100,8 +100,8 @@ We had initially considered adding a scheduling method in the timer.c file
 but it had cluttered the code and also was not optimised. 
 
 
-    		     PROD/CONS
-	  	     =========
+			     PROD/CONS
+			     =========
 
 ---- SYNCHRONIZATION ----
 

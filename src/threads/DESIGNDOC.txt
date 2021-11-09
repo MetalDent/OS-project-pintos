@@ -34,11 +34,17 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 
 /* modified or new data structures */
 >> thread.h: In struct thread
-	struct list_elem donorelem;	// priority donor threads
-	int64_t ticks_wakeup;   	// ticks to wakeup 
+	struct list_elem donorelem;	// priority donor threads, 
+					// they donate their priority to the current thread if it has a higher priority
+	
+	int64_t ticks_wakeup;   	// ticks to wakeup the thread
+	
 	int base_priority;   		// the priority of the base element/thread
-	struct thread *locker;		// the locker thread who currently has acquired the resource
+	
+	struct thread *locker;		// the locker thread who currently has acquired the resource/lock
+	
 	struct list prio_donors;	// threads who have acquired locks but a new thread having higher priority comes
+	
 	struct lock *blocked;		// blocked thread
 
 >> thread.c:
@@ -55,10 +61,18 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >>>> given number of ticks. The thread is then inserted into a list (sleep_list) which is done by 
 >>>> comparing the number of ticks, so that we can prioritize the thread with an earlier wake-up time.
 
+>>>>	cur_level = intr_disable();
+	cur_thread = thread_current();
+
+	cur_thread->ticks_wakeup = timer_ticks() + ticks;
+	list_insert_ordered (&sleep_list, &cur_thread->elem, cmp_ticks_wakeup, NULL);
+
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
 
->>>> \o/
+>>>> We have added the main handling on the thread side of code, so the handling
+>>>> is transfered from the timer interrupt to reduce time spent there.
+>>>> The ticks compare method and sleeping thread list are both on the thread side.
 
 ---- SYNCHRONIZATION ----
 
@@ -72,14 +86,16 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
 
->>>> \o/
+>>>> The interrupt is disabled before going into the "critical section" so as to avoid such 
+>>>> problem. Later we enable it again.
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
 
->>>> \o/
+>>>> We had initially considered adding a scheduling method in the timer.c file
+>>>> but it had cluttered the code and also was not optimised. 
 
 
     		     PROD/CONS
@@ -93,7 +109,7 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 >>>> In our solution, there is a check on the number of items in the buffer, 
 >>>> and if that number is zero, there is a wait for the 'full' condition:
 
-	while(buf_count == 0)
+>>>>	while(buf_count == 0)
             cond_wait(&full,&lock);
 
 Therefore, a consumer will only proceed to consume if there is an item in the buffer, 
@@ -105,7 +121,7 @@ Therefore, a consumer will only proceed to consume if there is an item in the bu
 >>>> As in the answer above, there is a similar check in the producer thread, 
 >>>> to check if the buffer is full:
 	
-	while(buf_count == MAX)
+>>>>	while(buf_count == MAX)
             cond_wait(&empty, &lock);
 
 The empty condition only gets signalled when a consumer consumes an item, and hence the buffer is 

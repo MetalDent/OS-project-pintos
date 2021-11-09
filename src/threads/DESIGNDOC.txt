@@ -15,7 +15,7 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 
 >> If you have any preliminary comments on your submission, notes for the
 >> TAs, or extra credit, please give them here.
-
+Github Repo: https://github.com/MetalDent/OS-project-pintos
 >> CITATIONS:
 1. www.cs.umd.edu
 2. http://web.stanford.edu/

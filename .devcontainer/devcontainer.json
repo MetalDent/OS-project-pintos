@@ -1,0 +1,6 @@
+{
+"image": "docker.io/antoineka/pintos-vscode:2021",
+"extensions": [
+	"ms-vscode.cpptools"
+]
+}

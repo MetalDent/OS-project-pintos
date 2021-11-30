@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include <threads/synch.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -92,6 +93,16 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+    
+    bool success;
+    int exit_error;
+    struct list child_proc;
+    struct thread* parent;
+    struct file *self;
+    struct list files;
+    int fd_count;
+    struct semaphore child_lock;
+    int waitingon;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -100,6 +111,14 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+  };
+
+struct child 
+  {
+    int tid;
+    struct list_elem elem;
+    int exit_error;
+    bool used;
   };
 
 /* If false (default), use round-robin scheduler.

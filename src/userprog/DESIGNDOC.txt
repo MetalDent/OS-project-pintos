@@ -135,7 +135,6 @@ If it is then we can proceed.
 >> for a system call that only copies 2 bytes of data?  Is there room
 >> for improvement in these numbers, and how much?
 
-\o/
 
 >> B5: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
@@ -157,7 +156,9 @@ method. This waits for the child process to finish, i.e., child process terminat
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
 
-\o/
+Before doing any system call, we are first validating the pointer value 
+using the method "check_address()" and after than only we are doing the system 
+call so as to avoid any bad pointer value.
 
 ---- SYNCHRONIZATION ----
 
@@ -187,7 +188,7 @@ If P terminates after C exits then C's locks get released.
 >> B9: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
 
-\o/
+This was the solution that clicked first and it worked. So we stuck with this design.
 
 >> B10: What advantages or disadvantages can you see to your design
 >> for file descriptors?
@@ -197,7 +198,7 @@ As every "fd" is unique to each process then there is no race condition.
 >> B11: The default tid_t to pid_t mapping is the identity mapping.
 >> If you changed it, what advantages are there to your approach?
 
-\o/
+We have not changed the default approach.
 
 			   SURVEY QUESTIONS
 			   ================
@@ -223,8 +224,6 @@ implement them in the low level.
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
-
-\o/
 
 >> Do you have any suggestions for the TAs to more effectively assist
 >> students, either for future quarters or the remaining projects?

@@ -94,7 +94,6 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  
   lock_init(&filesys_lock);
 
   /* Set up a thread structure for the running thread. */
@@ -187,11 +186,11 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
   
-  struct child* c = malloc(sizeof(*c));
+  struct child *c = malloc(sizeof(*c));
   c->tid = tid;
   c->exit_error = t->exit_error;
   c->used = false;
-  list_push_back (&running_thread()->child_proc, &c->elem);
+  list_push_back(&running_thread()->child_process, &c->elem);
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -300,9 +299,9 @@ thread_exit (void)
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */
   
-  while(!list_empty(&thread_current()->child_proc))
+  while(!list_empty(&thread_current()->child_process))
   {
-    struct proc_file *f = list_entry (list_pop_front(&thread_current()->child_proc), struct child, elem);
+    struct process_file *f = list_entry(list_pop_front(&thread_current()->child_process), struct child, elem);
     free(f);
   }
   
@@ -481,16 +480,16 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   
-  list_init (&t->child_proc);
+  list_init(&t->child_process);
   t->parent = running_thread();
-  list_init (&t->files);
-  t->fd_count=2;
+  list_init(&t->files);
+  t->fd_count = 2;
   
   t->exit_error = -100;
-  sema_init(&t->child_lock,0);
+  sema_init(&t->child_lock, 0);
   
-  t->waitingon=0;
-  t->self=NULL;
+  t->waitingon = 0;
+  t->self =NULL;
   
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

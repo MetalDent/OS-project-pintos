@@ -96,8 +96,8 @@ struct thread
     
     bool success;
     int exit_error;
-    struct list child_proc;
-    struct thread* parent;
+    struct list child_process;
+    struct thread *parent;
     struct file *self;
     struct list files;
     int fd_count;

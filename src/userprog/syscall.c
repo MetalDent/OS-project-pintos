@@ -13,7 +13,8 @@ struct process_file *list_search(struct list *files, int fd);
 
 extern bool running;
 
-struct process_file {
+struct process_file 
+{
 	struct file* ptr;
 	int fd;
 	struct list_elem elem;

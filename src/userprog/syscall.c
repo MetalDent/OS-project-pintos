@@ -15,9 +15,9 @@ extern bool running;
 
 struct process_file 
 {
-	struct file* ptr;
-	int fd;
-	struct list_elem elem;
+	struct file* ptr;	      // pointer to the current file
+	int fd;			            // file descriptor
+	struct list_elem elem;	// element
 };
 
 void
@@ -198,7 +198,7 @@ int execute_process(char *file_name)
   }
 }
 
-void exit_process(int status)
+void exit_process(int status)     // method for process exit
 {
 	struct list_elem *e;
 
@@ -220,7 +220,7 @@ void exit_process(int status)
 	thread_exit();
 }
 
-void* check_address(const void *vaddr)
+void* check_address(const void *vaddr)   // method to validate the pointer address
 {
 	if (!is_user_vaddr(vaddr))
 	{
@@ -252,7 +252,7 @@ struct process_file *list_search(struct list *files, int fd)
    return NULL;
 }
 
-void close_file(struct list *files, int fd)
+void close_file(struct list *files, int fd)      // method to close a file
 {
 	struct list_elem *e;
 	struct process_file *f;
@@ -270,7 +270,7 @@ void close_file(struct list *files, int fd)
   free(f);
 }
 
-void close_all_files(struct list *files)
+void close_all_files(struct list *files)      // method is called to close all files
 {
 	struct list_elem *e;
 

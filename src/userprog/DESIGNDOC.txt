@@ -34,18 +34,9 @@ Parth Thakker <path00003@uni-saarland.de> 7023151
 
 In thread.h:
 	struct thread:
-		bool success;				// to store whether the operation was successful or not
-    		int exit_error;				// to store to value of error on exit which is printed at the end 
-   		struct thread *parent;			// parent thread
-    		struct file *self;			// current file
-    		struct semaphore child_lock;		// semaphore for the children processes
-    		int waitingon;				// process is waiting onto which other process
-    	
-    	struct child:
-    		int tid;			// thread id
-    		struct list_elem elem;		// the list element
-    		int exit_error;			// to store to value of error on exit which is printed at the end
-    		bool used;			// is the current child used already or not
+		bool success;			// to store whether the operation was successful or not
+    		int exit_error;			// to store to value of error on exit which is printed at the end 
+    		struct file *self;		// current file
 
 ---- ALGORITHMS ----
 
@@ -97,9 +88,19 @@ when one uses the last token held by the other. This can crash the kernel.
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
 In thread.h:
-	struct list files;		// list of the files to track them
-    	int fd_count;			// file descriptor
-	struct list child_process;	// children processes
+	struct thread:
+		struct list files;		// list of the files to track them
+	    	int fd_count;			// file descriptor counter
+	    	struct thread *parent;		// parent thread
+		struct list child_process;	// children processes
+		struct semaphore child_lock;	// semaphore for the children processes
+		int waitingon;			// process is waiting onto which other process
+	
+	struct child:
+    		int tid;			// thread id
+    		struct list_elem elem;		// the list element
+    		int exit_error;			// to store to value of error on exit which is printed at the end
+    		bool used;			// is the current child used already or not
 
 In syscall.c:
 	struct process_file: 

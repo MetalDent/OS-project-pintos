@@ -94,15 +94,15 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     
-    bool success;
-    int exit_error;
-    struct list child_process;
-    struct thread *parent;
-    struct file *self;
-    struct list files;
-    int fd_count;
-    struct semaphore child_lock;
-    int waitingon;
+		bool success;				                // to store whether the operation was successful or not
+    int exit_error;				              // to store to value of error on exit which is printed at the end 
+	  struct list child_process;	        // children processes
+    struct thread *parent;			        // parent thread
+    struct file *self;			            // current file
+	  struct list files;		              // list of the files to track them
+    int fd_count;			                  // file descriptor counter
+    struct semaphore child_lock;		    // semaphore for the children processes
+    int waitingon;				              // process is waiting onto which other process
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -115,10 +115,10 @@ struct thread
 
 struct child 
   {
-    int tid;
-    struct list_elem elem;
-    int exit_error;
-    bool used;
+    int tid;			                      // thread id
+    struct list_elem elem;		          // the list element
+    int exit_error;			                // to store to value of error on exit which is printed at the end
+    bool used;			                    // is the current child used already or not
   };
 
 /* If false (default), use round-robin scheduler.

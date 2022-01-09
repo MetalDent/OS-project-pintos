@@ -136,6 +136,25 @@ pagedir_get_page (uint32_t *pd, const void *uaddr)
     return NULL;
 }
 
+/* Check that user access, read or write depending on flag, to the specified address is valid, and if so return kernel virtual address. */
+void *
+pagedir_get_user_valid (uint32_t *pd, const void *uaddr, bool write)
+{
+  uint32_t *pte;
+  uint32_t flags = PTE_P | PTE_U | (write ? PTE_W : 0);
+
+  if (!is_user_vaddr (uaddr))
+    return false;
+
+  pte = lookup_page (pd, uaddr, false);
+
+  /* check permissions */
+  if (!pte || ((*pte & flags) != flags))
+    return NULL;
+
+  return pte_get_page (*pte) + pg_ofs (uaddr);
+}
+
 /* Marks user virtual page UPAGE "not present" in page
    directory PD.  Later accesses to the page will fault.  Other
    bits in the page table entry are preserved.

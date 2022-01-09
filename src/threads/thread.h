@@ -4,7 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include <kernel/list.h>
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -93,19 +93,21 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-    
-    /*  change starts  */
-    struct list_elem donorelem;	// priority donor threads
-	  int64_t ticks_wakeup;   	// ticks to wakeup 
-	  int base_priority;   		// the priority of the base element/thread
-	  struct thread *locker;		// the locker thread who currently has acquired the resource
-	  struct list prio_donors;	// threads who have acquired locks but a new thread having higher priority comes
-	  struct lock *blocked;		// blocked thread
-    /*  change ends  */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
+
+    struct semaphore wait_termination; /* Raised to 1 on proc termination. */
+    struct semaphore ack_termination; /* Raised to 1 by waiter when done. */
+    int exit_code;
+
+    struct list_elem child_elem;
+    struct list children;
+    void *syscall_buf;
+    struct file **fd_table;
+
+    struct file *executable;
 #endif
 
     /* Owned by thread.c. */
@@ -116,7 +118,6 @@ struct thread
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
-//int load_avg;
 
 void thread_init (void);
 void thread_start (void);
@@ -126,7 +127,8 @@ void thread_print_stats (void);
 
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
-
+struct thread *thread_create_blocked (const char *, int, thread_func *,
+                                      void *);
 void thread_block (void);
 void thread_unblock (struct thread *);
 
@@ -148,10 +150,5 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
-
-/* change starts  */
-bool cmp_ticks_wakeup(struct list_elem *first, struct list_elem *second, void *aux);  // compares the ticks of the threads
-bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux);      // comapares the priorities of the threads
-/* change ends  */
 
 #endif /* threads/thread.h */

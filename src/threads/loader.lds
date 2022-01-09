@@ -1,4 +1,11 @@
+OUTPUT_FORMAT("binary")
+OUTPUT_ARCH(i386)
 SECTIONS
 {
-  /DISCARD/ : { *(.note) *(.note.*) }
+    . = 0x7c00;
+    .text : {
+        *(.text)
+        . = 512;
+    }
+    /DISCARD/ : { *(.*) }
 }

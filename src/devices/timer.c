@@ -7,7 +7,6 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-#include <kernel/list.h>
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -20,8 +19,6 @@
 
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
-
-struct list sleep_list;
 
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
@@ -40,7 +37,6 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init (&sleep_list);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -93,25 +89,11 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  //int64_t start = timer_ticks ();
+  int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
-  //while (timer_elapsed (start) < ticks) 
-  //  thread_yield ();
-  
-  /*  change starts */
-	struct thread* cur_thread;
-	enum intr_level cur_level;
-
-  cur_level = intr_disable();
-  cur_thread = thread_current();
-
-  cur_thread->ticks_wakeup = timer_ticks() + ticks;
-  list_insert_ordered (&sleep_list, &cur_thread->elem, cmp_ticks_wakeup, NULL);
-
-  thread_block();
-  intr_set_level(cur_level);
-  /* change ends  */
+  while (timer_elapsed (start) < ticks) 
+    thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -188,25 +170,8 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
-	struct list_elem *head;
-	struct thread *head_thread;
-
   ticks++;
   thread_tick ();
-  
-  /* change starts  */
-	while(!list_empty(&sleep_list))
-	{
-		head = list_front(&sleep_list);
-	  head_thread = list_entry (head, struct thread, elem);
-
-	  	if(head_thread->ticks_wakeup > ticks )
-	  		break;
-
-	  	list_remove(head);
-	  	thread_unblock(head_thread);
-	}
-  /* change ends  */
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

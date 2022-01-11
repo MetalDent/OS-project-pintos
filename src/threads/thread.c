@@ -319,7 +319,7 @@ void
 thread_exit (void) 
 {
   ASSERT (!intr_context ());
-  //sys_exit();
+  syscall_exit();
 
 #ifdef USERPROG
   process_exit ();

@@ -35,24 +35,65 @@ CITATIONS:
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+page.h:
+	struct page 
+	  {
+	    void *addr;                 /* Virtual address. */
+	    bool read_only;             /* Read-only */
+	    struct thread *thread;      /* Thread. */
+	    struct hash_elem hash_elem; /* Hash element for page. */
+	    struct frame *frame;        /* Page frame. */
+	    block_sector_t sector;      
+	    bool private;               /* Private owned file. */
+	    struct file *file;          /* File. */
+	    off_t file_offset;          /* File offset. */
+	    off_t file_bytes;           /* Bytes to read/write. */
+	  };
+	  
+frame.h: 
+	struct frame 
+	  {
+	    struct lock *llock;         /* Lock to prevent access. */
+	    void *base_addr;            /* Virtual base address. */
+	    struct page *page;          /* Page. */
+	  };
+
 ---- ALGORITHMS ----
 
 >> A2: In a few paragraphs, describe your code for locating the frame,
 >> if any, that contains the data of a given page.
 
+The page structure has information of its members and also the frame structure which contains
+a pointer to the virtual address of the kernel (that has the data) and a reference to the page
+owning it. 
+
+Initially the page frame is set to "NULL" and is allocated using the "frame_allocate()"
+function. This function first finds a free/available frame then assigns it to our page. If there's no
+free frame, then it removes an existing frame. In the worst case, the function returns "NULL".
+
 >> A3: How does your code coordinate accessed and dirty bits between
 >> kernel and user virtual addresses that alias a single frame, or
 >> alternatively how do you avoid the issue?
+
+We are using a variable "dirty" for this task. 
+This is checked using the function "pagedir_is_dirty()".
 
 ---- SYNCHRONIZATION ----
 
 >> A4: When two user processes both need a new frame at the same time,
 >> how are races avoided?
 
+The access can be limited to a single process at a time using the lock variable "llock" ("llock" 'cause "lock" can't be used ':D ).
+Two processes can't get the same frame and that's how the race conditions are avoided. 
+Every frame also has its own lock to show whether it is occupied or not.
+
 ---- RATIONALE ----
 
 >> A5: Why did you choose the data structure(s) that you did for
 >> representing virtual-to-physical mappings?
+
+The structures are implemented for pages and frames and we assigned their variables accordingly.
+The virtual to physical mapping design we chose is based on the theory we studied and also from the online resources.
 
 		       PAGING TO AND FROM DISK
 		       =======================
@@ -63,18 +104,32 @@ CITATIONS:
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+Mostly the same data structures defined for the page and frame task.
+
 ---- ALGORITHMS ----
 
 >> B2: When a frame is required but none is free, some frame must be
 >> evicted.  Describe your code for choosing a frame to evict.
 
+When no frame is available we need to remove one. So to decide which frame to evict, 
+we have implemented a function "page_accessed_recently()" and based on that the frame 
+which was accessed least recently is evicted.
+
+In the worst case, "NULL" is returned and no frame is evicted.
+
 >> B3: When a process P obtains a frame that was previously used by a
 >> process Q, how do you adjust the page table (and any other data
 >> structures) to reflect the frame Q no longer has?
 
+We just need to change the "frame" member of the page/process from "Q" to "P".
+
 >> B4: Explain your heuristic for deciding whether a page fault for an
 >> invalid virtual address should cause the stack to be extended into
 >> the page that faulted.
+
+The address of the page should be inside the allocated stack space (1MB) and the page address should be
+within 32 bytes of the thread's esp. This is because the stack management commands can only access
+32 bytes after the esp.
 
 ---- SYNCHRONIZATION ----
 
@@ -108,6 +163,9 @@ CITATIONS:
 >> where your design falls along this continuum and why you chose to
 >> design it this way.
 
+We have used our Alarm Clock task's code for the timer which we had implemented 
+in assignment 1.
+
 			 MEMORY MAPPED FILES
 			 ===================
 
@@ -117,14 +175,42 @@ CITATIONS:
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+syscall.c:
+	struct mapping
+	  {
+	    struct list_elem elem;      /* Element. */
+	    int id;                     /* Mapping id. */
+	    struct file *file;          /* File. */
+	    uint8_t *base;              /* Base of the memory mapping. */
+	    size_t page_cnt;            /* Number of mapped pages. */
+	  };
+
+	struct file_descriptor
+	  {
+	    struct list_elem elem;      /* Element. */
+	    struct file *file;          /* File. */
+	    int handle;                 /* File handle. */
+	  };
+
 ---- ALGORITHMS ----
 
 >> C2: Describe how memory mapped files integrate into your virtual
 >> memory subsystem.  Explain how the page fault and eviction
 >> processes differ between swap pages and other pages.
 
+Each mapping has a reference to its address in the memory and also the mapped file. Each thread 
+also has a list of all of the files mapped to that thread. 
+
+The page fault and eviction process are different for the pages which are for the memory mapped files. 
+Pages which do not belong to any file are moved to a swap partition when they are removed.
+While eviction a memory mapped file page should only be assigned to the file, if modified. 
+
 >> C3: Explain how you determine whether a new file mapping overlaps
 >> any existing segment.
+
+Page for a new file mapping can only be allocated if and only if a free and unmapped page is found. 
+The "page_allocated()" function helps with this and it doesn't allocate any space which is already allocated.
+
 
 ---- RATIONALE ----
 
@@ -134,6 +220,9 @@ CITATIONS:
 >> that much of their implementation can be shared.  Explain why your
 >> implementation either does or does not share much of the code for
 >> the two situations.
+
+We have written separate implementation for the mapping as that looked simple 
+and by merging them it can get messy.
 
 			   SURVEY QUESTIONS
 			   ================
@@ -146,9 +235,12 @@ the quarter.
 
 >> In your opinion, was this assignment, or any one of the three problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
+This assignment took some time as we had to make sure to align the code for assignment 2 and
+also integrate the alarm clock code from assignment 1.
 
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
+Working on memory mapping was fun and insighful.
 
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you

@@ -18,6 +18,8 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "userprog/syscall.h"
+#include "vm/page.h"
+#include "vm/frame.h"
 
 #define PROCESS_DEBUG 0
 
@@ -26,7 +28,7 @@ static bool load (char *cmdline, void (**eip) (void), void **esp);
 
 struct proc_start {
   char *file_name;
-  struct semaphore init_wait;
+  struct semaphore init_wait;    
   bool sucess;
 };
 

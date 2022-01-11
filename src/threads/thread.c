@@ -13,6 +13,7 @@
 #include "threads/vaddr.h"
 #ifdef USERPROG
 #include "userprog/process.h"
+#include "userprog/syscall.h"
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -59,17 +60,23 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
+/* change starts  */
+extern struct list sleep_list;    // list for sleeping threads
+/* change ends  */
+
 static void kernel_thread (thread_func *, void *aux);
 
 static void idle (void *aux UNUSED);
 static struct thread *running_thread (void);
 static struct thread *next_thread_to_run (void);
-static void init_thread (struct thread *, const char *name, int priority);
+static void init_thread (struct thread *, const char *name, int priority, tid_t tid);
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+
+int load_avg;
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -95,7 +102,7 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT);
+  init_thread (initial_thread, "main", PRI_DEFAULT, 0);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 }
@@ -170,6 +177,16 @@ thread_create (const char *name, int priority,
   if (!t)
     return TID_ERROR;
   thread_unblock (t);
+  
+  /* change starts  */
+  enum intr_level old_level;    // change added
+  old_level = intr_disable ();
+  if(t->priority > thread_current()->priority)
+    thread_yield();
+  
+  intr_set_level (old_level);
+  /* change ends  */
+  
   return t->tid;
 }
 
@@ -182,6 +199,8 @@ thread_create_blocked (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
 
+  enum intr_level old_level;    // change added
+
   ASSERT (function != NULL);
 
   /* Allocate thread. */
@@ -190,8 +209,13 @@ thread_create_blocked (const char *name, int priority,
     return NULL;
 
   /* Initialize thread. */
-  init_thread (t, name, priority);
-  t->tid = allocate_tid ();
+  init_thread (t, name, priority, allocate_tid ());
+  //t->tid = allocate_tid ();
+  
+  /* Prepare thread for first run by initializing its stack.
+     Do this atomically so intermediate values for the 'stack' 
+     member cannot be observed. */
+  old_level = intr_disable ();    // change added
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -207,6 +231,8 @@ thread_create_blocked (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+  
+  intr_set_level (old_level);   // change added
 
   return t;
 }
@@ -245,6 +271,11 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
+  
+  /* change starts  */
+  list_sort (&ready_list, cmp_priority, NULL);
+  /* change ends  */
+  
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -288,6 +319,7 @@ void
 thread_exit (void) 
 {
   ASSERT (!intr_context ());
+  //sys_exit();
 
 #ifdef USERPROG
   process_exit ();
@@ -314,8 +346,11 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+  if (cur != idle_thread)
+    {
+      list_push_back (&ready_list, &cur->elem);
+      list_sort (&ready_list, cmp_priority, NULL);
+    }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -342,7 +377,35 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  //thread_current ()->priority = new_priority;
+  /* change starts  */
+  enum intr_level old_level;
+  old_level = intr_disable ();
+
+  if(list_empty(&thread_current()->pot_donors))
+  {
+    thread_current()->priority = new_priority; 
+    thread_current()->base_priority = new_priority;
+  }
+  else if(new_priority > thread_current()->priority)
+  {
+    thread_current()->priority = new_priority;
+    thread_current()->base_priority = new_priority;
+  }
+  else
+    thread_current()->base_priority = new_priority;
+
+  if(!list_empty(&ready_list))
+  {
+    struct list_elem *front = list_front(&ready_list);
+    struct thread *fthread = list_entry (front, struct thread, elem);
+
+    if(fthread->priority > thread_current ()->priority)
+      thread_yield();
+  }
+
+  intr_set_level (old_level);
+  /* change ends  */
 }
 
 /* Returns the current thread's priority. */
@@ -456,9 +519,9 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
-init_thread (struct thread *t, const char *name, int priority)
+init_thread (struct thread *t, const char *name, int priority, tid_t tid)
 {
-  enum intr_level old_level;
+  //enum intr_level old_level;
 
   ASSERT (t != NULL);
   ASSERT (PRI_MIN <= priority && priority <= PRI_MAX);
@@ -470,10 +533,24 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  t->tid = tid;
+  t->exit_code = -1;
+  list_init (&t->children);
+  t->pagedir = NULL;
+  t->pages = NULL;
+  t->bin_file = NULL;
+  list_init (&t->fds);
+  list_init (&t->mappings);
 
-  old_level = intr_disable ();
+  //old_level = intr_disable ();
+  /* change starts  */
+  t->base_priority = priority;
+  t->locker = NULL;
+  t->blocked = NULL;
+  list_init (&t->pot_donors);
+  /* change ends  */
   list_push_back (&all_list, &t->allelem);
-  intr_set_level (old_level);
+  //intr_set_level (old_level);
 
   list_init(&t->children);
   t->syscall_buf = NULL;
@@ -593,3 +670,23 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+/* change starts  */
+bool 
+cmp_ticks_wakeup(struct list_elem *first, struct list_elem *second, void *aux)
+{
+  struct thread *first_thread = list_entry (first, struct thread, elem);
+  struct thread *second_thread = list_entry (second, struct thread, elem);
+
+  return first_thread->ticks_wakeup < second_thread->ticks_wakeup;
+}
+
+bool 
+cmp_priority(struct list_elem *first, struct list_elem *second, void *aux)
+{
+  struct thread *first_thread = list_entry (first, struct thread, elem);
+  struct thread *second_thread = list_entry (second, struct thread, elem);
+
+  return first_thread->priority > second_thread->priority;
+}
+/* change ends  */

@@ -5,6 +5,8 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/synch.h"
+#include <hash.h>
+#include <kernel/list.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -94,7 +96,7 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-#ifdef USERPROG
+//#ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 
@@ -108,10 +110,22 @@ struct thread
     struct file **fd_table;
 
     struct file *executable;
-#endif
+//#endif
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+    struct hash *pages;                 /* Page table. */
+    struct file *bin_file;              /* Binary file. */
+    struct list fds;                    /* File descriptors. */
+    struct list mappings;               /* Memory-mapped files. */
+    int next;                           /* Next value. */
+    void *user_esp;                     /* Stack pointer. */
+    struct list_elem donorelem;
+    int64_t ticks_wakeup;   // ticks to wakeup 
+    int base_priority;   
+    struct thread *locker;
+    struct list pot_donors;
+    struct lock *blocked;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -150,5 +164,10 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+/* change starts  */
+bool cmp_ticks_wakeup(struct list_elem *first, struct list_elem *second, void *aux);  // compares the ticks of the threads
+bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux);      // comapares the priorities of the threads
+/* change ends  */
 
 #endif /* threads/thread.h */
